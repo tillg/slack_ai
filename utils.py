@@ -52,8 +52,9 @@ def get_logger(name, log_level=logging.WARN):
         # formatter = logging.Formatter('%(asctime)s %(name)s[%(process)d] %(levelname)s %(funcName)s: %(message)s')
         # formatter = logging.Formatter('\033[92m%(asctime)s\033[0m %(name)s[%(process)d] %(levelname)s %(funcName)s: %(message)s', "%Y-%m-%d %H:%M:%S")
         # formatter = logging.Formatter(f'\033[92m%(asctime)s\033[0m \033[95m{hostname}\033[0m %(name)s[%(process)d] %(levelname)s %(funcName)s: %(message)s', "%Y-%m-%d %H:%M:%S")
-        #formatter = logging.Formatter(f'\033[92m%(asctime)s\033[0m \033[95m{hostname}\033[0m \033[94m%(name)s[%(process)d]\033[0m %(levelname)s %(funcName)s: %(message)s', "%Y-%m-%d %H:%M:%S")
-        formatter = logging.Formatter(f'\033[92m%(asctime)s\033[0m \033[95m{hostname}\033[0m \033[94m%(name)s[%(process)d]\033[0m \033[1;30m%(levelname)s\033[0m %(funcName)s: %(message)s', "%Y-%m-%d %H:%M:%S")
+        # formatter = logging.Formatter(f'\033[92m%(asctime)s\033[0m \033[95m{hostname}\033[0m \033[94m%(name)s[%(process)d]\033[0m %(levelname)s %(funcName)s: %(message)s', "%Y-%m-%d %H:%M:%S")
+        formatter = logging.Formatter(f'\033[92m%(asctime)s\033[0m \033[95m{
+                                      hostname}\033[0m \033[94m%(name)s[%(process)d]\033[0m \033[1;30m%(levelname)s\033[0m %(funcName)s: %(message)s', "%Y-%m-%d %H:%M:%S")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
@@ -74,10 +75,11 @@ def transform_date2string(date_to_transform: datetime) -> str:
 def transform_string2date(string_to_transform: str) -> Optional[datetime]:
     """Transforms a String that holds a date in my standard format to a Date. 
         In case it can't transform it, it return None."""
+    logger = get_logger(transform_string2date.__name__, logging.INFO)
     try:
         date_obj = datetime.strptime(string_to_transform, internalDateFormat)
     except:
-        log("transformString2Date", "Error transforming string to date: ",
+        logger.info("transformString2Date", "Error transforming string to date: ",
             string_to_transform)
         date_obj = None
     return date_obj
@@ -105,8 +107,9 @@ def are_variables_set(var_names) -> bool:
 
 
 def is_variable_set(var_name: str) -> bool:
+    logger = get_logger(is_variable_set.__name__, logging.INFO)
     if (os.getenv(var_name) is None) or (os.getenv(var_name) == ""):
-        log("isVariableSet", "Error",
+        logger.info("isVariableSet", "Error",
             f'Variable {var_name} is not set in environment.')
         return False
     return True
@@ -194,9 +197,6 @@ def test_read_dict_from_file():
         print("All good, I am in an exception as I expected it to be")
 
 
-# test_readDictFromFile()
-
-
 def date_string_distance_in_days(date_str1: str, date_str2: str) -> int:
     date1 = transform_string2date(date_str1)
     date2 = transform_string2date(date_str2)
@@ -225,13 +225,14 @@ def date_string_distance_in_hours(date_str1: str, date_str2: str) -> int:
 def get_image_size(filename: str) -> Dict:
     """Returns the size of the image in the file given.
     If it's a svg it returns None."""
+    logger = get_logger(get_image_size.__name__, logging.INFO)
     file_extension = pathlib.Path(filename).suffix
     # log("getImageSize: ",
     #     "File extension: ", file_extension)
     if file_extension == ".svg":
         return {}
     elif not os.path.exists(filename):
-        log("getImageSize: ", "File does not exist: ", filename)
+        logger.warn("getImageSize: ", "File does not exist: ", filename)
         return {}
     else:
         try:
@@ -240,38 +241,18 @@ def get_image_size(filename: str) -> Dict:
             height = img.height
             return {"width": width, "height": height}
         except:
-            log("getImageSize: ", "Could not open image file: ", filename)
+            logger.warn("getImageSize: ", "Could not open image file: ", filename)
             return {}
 
 
 def load_page(http_session: Session, url: str) -> Optional[Response]:
+    logger = get_logger(load_page.__name__, logging.INFO)
     try:
         page = http_session.get(url)
         return page
     except:
-        log("loadPage", url, ": Error!")
+        logger.error("loadPage", url, ": Error!")
         return None
-
-
-def create_logged_in_http_session(*, login_url: str, username: str, password: str) -> Session:
-    s = Session()
-    # log('createLoggedInHttpSession', 'Logging in to ', loginUrl)
-    login_data = {"os_username": username,  # CONFLUENCE_USER,
-                  "os_password": password}  # CONFLUENCE_PASSWORD}
-    try:
-        s.post(login_url, login_data)  # CONFLUENCE_LOGIN_URL
-    except Exception as e:
-        log("createLoggedInHttpSession: Error: ",
-            "Could not create HTTP Session.", e)
-        exit()
-    return s
-
-
-def log(name: str, *args, end: str = "\n"):
-    str_to_print = Color.BOLD + name + ": " + Color.END
-    for arg in args:
-        str_to_print += str(arg)
-    print(str_to_print, end=end)
 
 
 def simplify_text(some_text: str) -> str:

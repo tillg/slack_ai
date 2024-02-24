@@ -50,10 +50,6 @@ def message_handler(body, say):
     logger.info(f"Body: {formatted_body}")
     return 
 
-def add_message_to_message_stack(message_stack, role, content):
-    message_stack.append(question)
-    return message_stack
-
 if __name__ == "__main__":
     handler = SocketModeHandler(app, SLACK_APP_TOKEN)
     handler.start()

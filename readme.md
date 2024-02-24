@@ -10,8 +10,6 @@ My AI system accessible via Slack.
 * Create a `.env` file and edit it: `cp sample.env .env`
 * Start the thing with `python app.py` and watch the logs scroll 😉
 
-## Log of me doing
-
 ## Reading / problems / Solutions
 
 * [How to Build a Slackbot with Python](https://www.kubiya.ai/resource-post/how-to-build-a-slackbot-with-python)
