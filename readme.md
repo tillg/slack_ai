@@ -7,8 +7,9 @@ My local AI system accessible via Slack.
 See what it looks like:
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=8y4jwXNwdSU" target="_blank">
- <img src="http://img.youtube.com/vi/8y4jwXNwdSU/mqdefault.jpg" alt="Watch the video" width="400" border="5" />
+ <img src="http://img.youtube.com/vi/8y4jwXNwdSU/hqdefault.jpg" alt="Watch the video" width="400" border="5" />
 </a>
+Click on the picture to see the video.
 
 ## Getting things going
 
