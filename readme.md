@@ -4,7 +4,11 @@ My local AI system accessible via Slack.
 
 ![Overview](overview.svg)
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/8y4jwXNwdSU?si=kOrpgWPIOdjXD_Cs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+See what it looks like:
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=8y4jwXNwdSU" target="_blank">
+ <img src="http://img.youtube.com/vi/8y4jwXNwdSU/mqdefault.jpg" alt="Watch the video" width="400" border="5" />
+</a>
 
 ## Getting things going
 
