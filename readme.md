@@ -29,7 +29,7 @@ Click on the picture to see the video.
 
 ## Reading / Problems / Solutions
 
-* 
+* [Slack Bolt Framework - Listening to events](https://slack.dev/bolt-python/concepts#event-listening)
 * [How to Build a Slackbot with Python](https://www.kubiya.ai/resource-post/how-to-build-a-slackbot-with-python)
 * Took this [ChatGPT class](https://gist.github.com/joeddav/a11e5cc0850f0e540324177a53b547ae)
 

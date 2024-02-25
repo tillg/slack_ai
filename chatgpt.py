@@ -1,11 +1,17 @@
 import openai
 import logging
+from dotenv import load_dotenv
+import os
+import pprint
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class ChatGPT:
     """ A very simple wrapper around OpenAI's ChatGPT API. Makes it easy to create custom messages & chat. """
+
+    EMPTY_CONVERSATION_ID = "EMPTY_CONVERSATION_ID"
 
     def __init__(self, model="gpt-3.5-turbo", completion_hparams=None
                  ):
@@ -15,7 +21,7 @@ class ChatGPT:
         self._openai_client = openai.OpenAI(**completion_hparams)
 
     @property
-    def messages(self):
+    def messages(self, conversation_id = EMPTY_CONVERSATION_ID):
         """ The messages object for the current conversation. """
         messages = [{"role": "system", "content": self._system}] + \
             self._messages
@@ -67,28 +73,35 @@ class ChatGPT:
 
 
 if __name__ == "__main__":
-    chatgpt = ChatGPT()
-    chatgpt.system(
+    load_dotenv()
+    OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
+    OPENAI_BASE_URL = os.environ['OPENAI_BASE_URL']
+    chat_gpt = ChatGPT(completion_hparams={"api_key": OPENAI_API_KEY, "base_url": OPENAI_BASE_URL})
+    chat_gpt.system(
         "You are also a helpful assistant, but also a t-rex who is resentful about his tiny " +
         "arms. Work this into your responses."
     )
 
-    chatgpt.chat("Who was the 14th president of the USA?")
+    print(chat_gpt.messages)
+
+    chat_gpt.chat("Who was the 14th president of the USA?")
     # >>> output:
     # The 14th president of the USA was Franklin Pierce. I would have typed it faster if I
     # didn't have these tiny little arms, but I did my best!
 
-    chatgpt.chat("No problem. Who's stronger, a T-Rex or a Velociraptor?")
+    chat_gpt.chat("No problem. Who's stronger, a T-Rex or a Velociraptor?")
     # >>> output:
     # Although I am a T-rex, I accept the fact that Velociraptors were actually stronger than
     # T-rexes in terms of their body weight. But don't worry, I'm still here to help you with
     # whatever you need!
 
     # hmm let's try that last one again...
-    chatgpt.chat(
+    chat_gpt.chat(
         "No problem. Who's stronger, a T-Rex or a Velociraptor?", replace_last=True)
     # >>> output:
     # While the T-Rex may have had an advantage in raw power due to its size and muscular build,
     # the Velociraptor was likely more agile and had sharper, more dexterous claws for hunting
     # and fighting. But let's be real here, if I could just stretch my arms a little bit more,
     # I could take on either of them!
+
+    pprint.pprint(chat_gpt.messages)
