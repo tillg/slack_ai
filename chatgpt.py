@@ -3,7 +3,7 @@ import logging
 from dotenv import load_dotenv
 import os
 import pprint
-
+from utils import write_dict_to_file, read_dict_from_file
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -13,14 +13,20 @@ class ChatGPT:
     """ A very simple wrapper around OpenAI's ChatGPT API. Makes it easy to create custom messages & chat. """
 
     EMPTY_CONVERSATION_ID = "EMPTY_CONVERSATION_ID"
+    MESSAGES_FILENAME = "messages.json"
+    SYSTEM_PROMTS_FILENAME = "system.json"
 
     def __init__(self, model="gpt-3.5-turbo", completion_hparams=None
                  ):
         self.model = model
         self.completion_hparams = completion_hparams or {}
-        self._messages = {}
-        self._system = {}
+        self._messages = read_dict_from_file(full_filename=self.MESSAGES_FILENAME)
+        self._system = read_dict_from_file(full_filename=self.SYSTEM_PROMTS_FILENAME)
         self._openai_client = openai.OpenAI(**completion_hparams)
+
+    def _write_messages_to_file(self):
+        """ Write the messages to a file """
+        write_dict_to_file(dictionary=self._messages, full_filename=self.MESSAGES_FILENAME)
 
     def _ensure_conversation_id(self, conversation_id):
         """ Ensure the conversation_id exists in the messages dict """
@@ -37,11 +43,12 @@ class ChatGPT:
             messages += self._messages[conversation_id]
         return messages
 
-    def system(self, message, do_reset=True, conversation_id=EMPTY_CONVERSATION_ID):
+    def system(self, message, do_reset=False, conversation_id=EMPTY_CONVERSATION_ID):
         """ Set the system message and optionally reset the conversation (default=true) """
         if do_reset:
             self.reset(conversation_id=conversation_id)
         self._system[conversation_id] = message
+        write_dict_to_file(dictionary=self._system, full_filename=self.SYSTEM_PROMTS_FILENAME)
 
     def user(self, message, conversation_id=EMPTY_CONVERSATION_ID):
         """ Add a user message to the conversation """
@@ -49,16 +56,19 @@ class ChatGPT:
         self._ensure_conversation_id(conversation_id)
         self._messages[conversation_id].append(
             {"role": "user", "content": message})
+        self._write_messages_to_file()
 
     def assistant(self, message, conversation_id=EMPTY_CONVERSATION_ID):
         """ Add an assistant message to the conversation """
         self._ensure_conversation_id(conversation_id)
         self._messages[conversation_id].append(
             {"role": "assistant", "content": message})
+        self._write_messages_to_file()
 
     def reset(self, conversation_id=EMPTY_CONVERSATION_ID):
         """ Reset the conversation (does not reset the system message) """
         self._messages[conversation_id] = []
+        self._write_messages_to_file()
 
     def _make_completion(self, messages, conversation_id=EMPTY_CONVERSATION_ID):
         """ Makes a completion with the current messages """
@@ -105,7 +115,7 @@ if __name__ == "__main__":
         "arms. Work this into your responses."
     )
 
-    print(chat_gpt.get_messages_for_conversation())
+    pprint.pprint(chat_gpt.get_messages_for_conversation())
 
     chat_gpt.chat("Who was the 14th president of the USA?")
     # >>> output:

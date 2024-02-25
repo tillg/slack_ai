@@ -148,8 +148,8 @@ def write_dict_to_file(*, dictionary: Dict, full_filename: str) -> Dict:
     return sorted_dictionary
 
 
-def read_dict_from_file(*, full_filename: str) -> Dict:
-    """Reads a dictionary from a file. Chacks that the dictionary read has a _stats.lastWritten entry."""
+def read_dict_from_file(*, full_filename: str, skip_file_not_found = True) -> Dict:
+    """Reads a dictionary from a file. Checks that the dictionary read has a _stats.lastWritten entry."""
     logger = get_logger(read_dict_from_file.__name__, logging.INFO)
     data = {}
     try:
@@ -163,7 +163,8 @@ def read_dict_from_file(*, full_filename: str) -> Dict:
             return data
     except IOError as e:
         logger.warning(f"Could not open file {full_filename}")
-        raise e
+        if not skip_file_not_found:
+            raise e
     return data
 
 

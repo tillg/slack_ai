@@ -18,6 +18,7 @@ SLACK_APP_TOKEN = os.environ['SLACK_APP_TOKEN']
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 OPENAI_BASE_URL = os.environ['OPENAI_BASE_URL']
 
+
 logger = get_logger("app", logging.INFO)
 
 chat_gpt = ChatGPT(completion_hparams={"api_key": OPENAI_API_KEY, "base_url": OPENAI_BASE_URL})
