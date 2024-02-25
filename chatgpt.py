@@ -3,7 +3,7 @@ import logging
 from dotenv import load_dotenv
 import os
 import pprint
-from utils import write_dict_to_file, read_dict_from_file
+from utils import write_dict_to_file, read_dict_from_file, get_now_as_string
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -19,12 +19,14 @@ class ChatGPT:
                  ):
         self.model = model
         self.completion_hparams = completion_hparams or {}
-        self._messages = read_dict_from_file(full_filename=self.MESSAGES_FILENAME)
+        self._messages = read_dict_from_file(
+            full_filename=self.MESSAGES_FILENAME)
         self._openai_client = openai.OpenAI(**completion_hparams)
 
     def _write_messages_to_file(self):
         """ Write the messages to a file """
-        write_dict_to_file(dictionary=self._messages, full_filename=self.MESSAGES_FILENAME)
+        write_dict_to_file(dictionary=self._messages,
+                           full_filename=self.MESSAGES_FILENAME)
 
     def _ensure_conversation_id(self, conversation_id):
         """ Ensure the conversation_id exists in the messages dict """
@@ -36,6 +38,8 @@ class ChatGPT:
         messages = []
         if conversation_id in self._messages:
             messages = self._messages[conversation_id]
+        messages = [{"role": obj["role"], "content": obj["content"]}
+                    for obj in messages]
         return messages
 
     def system(self, message, do_reset=False, conversation_id=EMPTY_CONVERSATION_ID):
@@ -46,7 +50,7 @@ class ChatGPT:
         if len(messages_of_conversation) > 0 and messages_of_conversation[0]["role"] == "system":
             messages_of_conversation = messages_of_conversation[1:]
         messages_of_conversation = [{"role": "system",
-                          "content": message}] + messages_of_conversation
+                                     "content": message, "datetime": get_now_as_string()}] + messages_of_conversation
         self._messages[conversation_id] = messages_of_conversation
         self._write_messages_to_file()
 
@@ -54,22 +58,25 @@ class ChatGPT:
         """ Get the system message """
         messages_of_conversation = self._messages.get(conversation_id, [])
         if len(messages_of_conversation) > 0 and messages_of_conversation[0]["role"] == "system":
-            return messages_of_conversation[0]["content"] 
+            return messages_of_conversation[0]["content"]
         return None
-    
+
     def user(self, message, conversation_id=EMPTY_CONVERSATION_ID):
         """ Add a user message to the conversation """
-        logger.info(f"Entering user with {message=}, {conversation_id=}")
         self._ensure_conversation_id(conversation_id)
         self._messages[conversation_id].append(
-            {"role": "user", "content": message})
+            {"role": "user", "content": message, "datetime": get_now_as_string()})
         self._write_messages_to_file()
 
-    def assistant(self, message, conversation_id=EMPTY_CONVERSATION_ID):
+    def assistant(self, message, conversation_id=EMPTY_CONVERSATION_ID, details=None):
         """ Add an assistant message to the conversation """
         self._ensure_conversation_id(conversation_id)
+        new_entry = {"role": "assistant", "content": message,
+                     "datetime": get_now_as_string()}
+        if details is not None:
+            new_entry.update(details)
         self._messages[conversation_id].append(
-            {"role": "assistant", "content": message})
+            new_entry)
         self._write_messages_to_file()
 
     def reset(self, conversation_id=EMPTY_CONVERSATION_ID):
@@ -79,35 +86,33 @@ class ChatGPT:
 
     def _make_completion(self, messages, conversation_id=EMPTY_CONVERSATION_ID):
         """ Makes a completion with the current messages """
-        logger.info(f"Entering _make_completion with {
-                    messages=}, {conversation_id=}")
         messages = self.get_messages_for_conversation(
             conversation_id=conversation_id)
-        logger.info(f"{messages=}")
         completion = self._openai_client.chat.completions.create(
             model=self.model,
             messages=messages
         )
-        logger.info(f"{completion=}")
         return completion
 
     def call(self, conversation_id=EMPTY_CONVERSATION_ID):
         """ Call ChatGPT with the current messages and return the assitant's message """
-        logger.info(f"Entering call with  {conversation_id=}")
         completion = self._make_completion(
             self._messages, conversation_id=conversation_id)
         response = completion.choices[0].message.content
-        return response
+        details = {"model": completion.model, "completion_tokens": completion.usage.completion_tokens,
+                   "prompt_tokens": completion.usage.prompt_tokens, "total_tokens": completion.usage.total_tokens}
+        model = completion.model
+        usage = completion.usage
+        return response, details
 
     def chat(self, message, replace_last=False, conversation_id=EMPTY_CONVERSATION_ID):
         """ Add a user message and append + return the assistant's response. Optionally replace the last user message and response. """
-        logger.info(f"Entering chat with {message=}, {conversation_id=}")
         if replace_last:
             self._messages[conversation_id] = self._messages[conversation_id][:-2]
-
         self.user(message, conversation_id=conversation_id)
-        response = self.call(conversation_id=conversation_id)
-        self.assistant(response, conversation_id=conversation_id)
+        response, details = self.call(conversation_id=conversation_id)
+        self.assistant(response,  details=details,
+                       conversation_id=conversation_id)
         return response
 
 

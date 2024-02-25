@@ -69,7 +69,10 @@ In order to have the slack platform interacting with your bot, you need to confi
 
 # To Do
 
-* A `/help` command
+* A `/model` command showing me 
+  * what model I use
+  * what models are available
+  * what model I want to use
 
 ## Reading / Problems / Solutions
 

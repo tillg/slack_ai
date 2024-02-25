@@ -13,7 +13,7 @@ import unidecode
 from PIL import Image
 from requests import Response, Session
 
-INTERNAL_DATE_FORMAT = "%Y-%m-%d"
+INTERNAL_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 coloredlogs.install()
 
 

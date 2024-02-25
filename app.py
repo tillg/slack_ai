@@ -18,17 +18,16 @@ SLACK_APP_TOKEN = os.environ['SLACK_APP_TOKEN']
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 OPENAI_BASE_URL = os.environ['OPENAI_BASE_URL']
 
-help_message = '''Hello, I am a friendly and helpful bot. I can answer questions and help you with your work. Just ask me anything!
-I offer special commands:
-/system - I will tell you about myself
-'''
 
 logger = get_logger("app", logging.INFO)
 
-chat_gpt = ChatGPT(completion_hparams={"api_key": OPENAI_API_KEY, "base_url": OPENAI_BASE_URL})
-chat_gpt.system("You are a poetic assistant, skilled in explaining everything with creative flair.")
+chat_gpt = ChatGPT(completion_hparams={
+                   "api_key": OPENAI_API_KEY, "base_url": OPENAI_BASE_URL})
+chat_gpt.system(
+    "You are a poetic assistant, skilled in explaining everything with creative flair.")
 
 slack_app = App(token=SLACK_BOT_TOKEN)
+
 
 @slack_app.event("message")
 def message_handler(body, say):
@@ -41,8 +40,8 @@ def message_handler(body, say):
 
     if question == "":
         logger.info("No question, ignoring.")
-        return 
-    
+        return
+
     channel_id = body["event"]["channel"]
     logger.info(f"{channel_id=}")
 
@@ -55,15 +54,18 @@ def message_handler(body, say):
     say(answer)
     return
 
-@slack_app.command ("/system")
+
+@slack_app.command("/system")
 def system_command(ack, say, body):
     logger = get_logger("system_command", logging.INFO)
     channel_id = body["channel_id"]
     channel_name = body["channel_name"]
     text = body["text"]
-    logger.info(f"System command received. {channel_id=}, {channel_name=}, {text=}, {body=}")
+    logger.info(f"System command received. {channel_id=}, {
+                channel_name=}, {text=}, {body=}")
     ack()
-    system_message = chat_gpt.get_system(conversation_id=channel_id) or "No System Prompt set"  
+    system_message = chat_gpt.get_system(
+        conversation_id=channel_id) or "No System Prompt set"
     say(f"System prompt for channel {channel_name}: {system_message}")
 
     if len(text) > 0:
@@ -71,6 +73,7 @@ def system_command(ack, say, body):
         say(f"System prompt set to: {text}")
 
     return
+
 
 @slack_app.event("app_mention")
 def handle_app_mention_events(body, logger):
@@ -80,8 +83,7 @@ def handle_app_mention_events(body, logger):
     logger.info("Ignoring event.")
     return
 
+
 if __name__ == "__main__":
     handler = SocketModeHandler(slack_app, SLACK_APP_TOKEN)
     handler.start()
-
-
