@@ -18,6 +18,10 @@ SLACK_APP_TOKEN = os.environ['SLACK_APP_TOKEN']
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 OPENAI_BASE_URL = os.environ['OPENAI_BASE_URL']
 
+help_message = '''Hello, I am a friendly and helpful bot. I can answer questions and help you with your work. Just ask me anything!
+I offer special commands:
+/system - I will tell you about myself
+'''
 
 logger = get_logger("app", logging.INFO)
 
@@ -39,16 +43,33 @@ def message_handler(body, say):
         logger.info("No question, ignoring.")
         return 
     
-    channel = body["event"]["channel"]
-    logger.info(f"{channel=}")
+    channel_id = body["event"]["channel"]
+    logger.info(f"{channel_id=}")
 
     answer = "I'm sorry, I'm not able to answer that question at the moment."
     try:
-        answer = chat_gpt.chat(question, conversation_id=channel)
+        answer = chat_gpt.chat(question, conversation_id=channel_id)
     except Exception as e:
         logger.error(f"Error: {e}")
     logger.info(f"Answer: {answer}")
     say(answer)
+    return
+
+@slack_app.command ("/system")
+def system_command(ack, say, body):
+    logger = get_logger("system_command", logging.INFO)
+    channel_id = body["channel_id"]
+    channel_name = body["channel_name"]
+    text = body["text"]
+    logger.info(f"System command received. {channel_id=}, {channel_name=}, {text=}, {body=}")
+    ack()
+    system_message = chat_gpt.get_system(conversation_id=channel_id) or "No System Prompt set"  
+    say(f"System prompt for channel {channel_name}: {system_message}")
+
+    if len(text) > 0:
+        chat_gpt.system(text, conversation_id=channel_id)
+        say(f"System prompt set to: {text}")
+
     return
 
 @slack_app.event("app_mention")

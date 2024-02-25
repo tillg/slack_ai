@@ -80,7 +80,7 @@ def transform_string2date(string_to_transform: str) -> Optional[datetime]:
         date_obj = datetime.strptime(string_to_transform, internalDateFormat)
     except:
         logger.info("transformString2Date", "Error transforming string to date: ",
-            string_to_transform)
+                    string_to_transform)
         date_obj = None
     return date_obj
 
@@ -110,7 +110,7 @@ def is_variable_set(var_name: str) -> bool:
     logger = get_logger(is_variable_set.__name__, logging.INFO)
     if (os.getenv(var_name) is None) or (os.getenv(var_name) == ""):
         logger.info("isVariableSet", "Error",
-            f'Variable {var_name} is not set in environment.')
+                    f'Variable {var_name} is not set in environment.')
         return False
     return True
 
@@ -148,7 +148,7 @@ def write_dict_to_file(*, dictionary: Dict, full_filename: str) -> Dict:
     return sorted_dictionary
 
 
-def read_dict_from_file(*, full_filename: str, skip_file_not_found = True) -> Dict:
+def read_dict_from_file(*, full_filename: str, skip_file_not_found=True) -> Dict:
     """Reads a dictionary from a file. Checks that the dictionary read has a _stats.lastWritten entry."""
     logger = get_logger(read_dict_from_file.__name__, logging.INFO)
     data = {}
@@ -162,9 +162,12 @@ def read_dict_from_file(*, full_filename: str, skip_file_not_found = True) -> Di
                     f"Read file {full_filename} successfully but does not contain _stats.lastWritten.")
             return data
     except IOError as e:
-        logger.warning(f"Could not open file {full_filename}")
         if not skip_file_not_found:
+            logger.error(f"Could not open file {full_filename}")
             raise e
+        else:
+            logger.warn(f"Could not open file {
+                        full_filename} - returning empty dict.")
     return data
 
 
@@ -242,7 +245,8 @@ def get_image_size(filename: str) -> Dict:
             height = img.height
             return {"width": width, "height": height}
         except:
-            logger.warn("getImageSize: ", "Could not open image file: ", filename)
+            logger.warn("getImageSize: ",
+                        "Could not open image file: ", filename)
             return {}
 
 
@@ -262,6 +266,6 @@ def simplify_text(some_text: str) -> str:
     """
     simplified_text = some_text.replace('"', "'")
     simplified_text = unidecode.unidecode(simplified_text)
-    simplified_text = re.sub("[^A-Za-z\-_]+", "_", simplified_text)
+    simplified_text = re.sub("[^A-Za-z-_]+", "_", simplified_text)
     simplified_text = re.sub('_+', '_', simplified_text)
     return simplified_text

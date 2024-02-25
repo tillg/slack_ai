@@ -42,7 +42,7 @@ class ChatGPT:
         """ Set the system message and optionally reset the conversation (default=true) """
         if do_reset:
             self.reset(conversation_id=conversation_id)
-        messages_of_conversation = self._messages[conversation_id]
+        messages_of_conversation = self._messages.get(conversation_id, [])
         if len(messages_of_conversation) > 0 and messages_of_conversation[0]["role"] == "system":
             messages_of_conversation = messages_of_conversation[1:]
         messages_of_conversation = [{"role": "system",
@@ -50,6 +50,13 @@ class ChatGPT:
         self._messages[conversation_id] = messages_of_conversation
         self._write_messages_to_file()
 
+    def get_system(self, conversation_id=EMPTY_CONVERSATION_ID):
+        """ Get the system message """
+        messages_of_conversation = self._messages.get(conversation_id, [])
+        if len(messages_of_conversation) > 0 and messages_of_conversation[0]["role"] == "system":
+            return messages_of_conversation[0]["content"] 
+        return None
+    
     def user(self, message, conversation_id=EMPTY_CONVERSATION_ID):
         """ Add a user message to the conversation """
         logger.info(f"Entering user with {message=}, {conversation_id=}")
