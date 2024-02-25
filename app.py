@@ -50,6 +50,14 @@ def message_handler(body, say):
     say(answer)
     return
 
+@slack_app.event("app_mention")
+def handle_app_mention_events(body, logger):
+    logger = get_logger("message_handler", logging.INFO)
+    formatted_body = pformat(body)
+    logger.info(f"{formatted_body=}")
+    logger.info("Ignoring event.")
+    return
+
 if __name__ == "__main__":
     handler = SocketModeHandler(slack_app, SLACK_APP_TOKEN)
     handler.start()
