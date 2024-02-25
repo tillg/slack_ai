@@ -31,9 +31,13 @@ def message_handler(body, say):
     formatted_body = pformat(body)
     logger.info(f"{formatted_body=}")
 
-    question = body["event"]["text"]
+    question = body["event"]["text"].strip()
     logger.info(f"{question=}")
 
+    if question == "":
+        logger.info("No question, ignoring.")
+        return 
+    
     channel = body["event"]["channel"]
     logger.info(f"{channel=}")
 
