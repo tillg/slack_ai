@@ -43,7 +43,7 @@ def message_handler(body, say):
 
     answer = "I'm sorry, I'm not able to answer that question at the moment."
     try:
-        answer = chat_gpt.chat(question)
+        answer = chat_gpt.chat(question, conversation_id=channel)
     except Exception as e:
         logger.error(f"Error: {e}")
     logger.info(f"Answer: {answer}")

@@ -23,7 +23,6 @@ Click on the picture to see the video.
 # To Do
 
 * Describe in the readme how to set up the bot in Slack
-* Track the messages on a per-chat basis
 * Store messages to file so they are still available after shiutdown & restart
 * Make the system message visible & changeable
 
