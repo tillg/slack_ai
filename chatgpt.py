@@ -14,14 +14,12 @@ class ChatGPT:
 
     EMPTY_CONVERSATION_ID = "EMPTY_CONVERSATION_ID"
     MESSAGES_FILENAME = "messages.json"
-    SYSTEM_PROMTS_FILENAME = "system.json"
 
     def __init__(self, model="gpt-3.5-turbo", completion_hparams=None
                  ):
         self.model = model
         self.completion_hparams = completion_hparams or {}
         self._messages = read_dict_from_file(full_filename=self.MESSAGES_FILENAME)
-        self._system = read_dict_from_file(full_filename=self.SYSTEM_PROMTS_FILENAME)
         self._openai_client = openai.OpenAI(**completion_hparams)
 
     def _write_messages_to_file(self):
@@ -36,19 +34,21 @@ class ChatGPT:
     def get_messages_for_conversation(self, conversation_id=EMPTY_CONVERSATION_ID):
         """ The messages object for the current conversation. """
         messages = []
-        if conversation_id in self._system:
-            messages += [{"role": "system",
-                          "content": self._system[conversation_id]}]
         if conversation_id in self._messages:
-            messages += self._messages[conversation_id]
+            messages = self._messages[conversation_id]
         return messages
 
     def system(self, message, do_reset=False, conversation_id=EMPTY_CONVERSATION_ID):
         """ Set the system message and optionally reset the conversation (default=true) """
         if do_reset:
             self.reset(conversation_id=conversation_id)
-        self._system[conversation_id] = message
-        write_dict_to_file(dictionary=self._system, full_filename=self.SYSTEM_PROMTS_FILENAME)
+        messages_of_conversation = self._messages[conversation_id]
+        if len(messages_of_conversation) > 0 and messages_of_conversation[0]["role"] == "system":
+            messages_of_conversation = messages_of_conversation[1:]
+        messages_of_conversation = [{"role": "system",
+                          "content": message}] + messages_of_conversation
+        self._messages[conversation_id] = messages_of_conversation
+        self._write_messages_to_file()
 
     def user(self, message, conversation_id=EMPTY_CONVERSATION_ID):
         """ Add a user message to the conversation """
@@ -66,7 +66,7 @@ class ChatGPT:
         self._write_messages_to_file()
 
     def reset(self, conversation_id=EMPTY_CONVERSATION_ID):
-        """ Reset the conversation (does not reset the system message) """
+        """ Reset the conversation (including the system message) """
         self._messages[conversation_id] = []
         self._write_messages_to_file()
 
