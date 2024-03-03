@@ -5,11 +5,10 @@ import logging
 import json
 import inspect
 from dotenv import load_dotenv
-from utils import get_logger
 from openai import OpenAI
 from pprint import pprint, pformat
-from chatgpt import ChatGPT
-
+from slack_ai.utils.utils import get_logger
+from slack_ai.chatgpt import ChatGPT
 
 load_dotenv()
 
@@ -28,12 +27,18 @@ chat_gpt.system(
 
 slack_app = App(token=SLACK_BOT_TOKEN)
 
+class PrettyJson:
+    def __init__(self, data):
+        self.data = data
+
+    def __str__(self):
+        return json.dumps(self.data, indent=4, sort_keys=True)
 
 @slack_app.event("message")
 def message_handler(body, say):
     logger = get_logger("message_handler", logging.INFO)
-    formatted_body = pformat(body)
-    logger.info(f"{formatted_body=}")
+    formatted_body = PrettyJson(body)
+    logger.info(f"formatted body: {formatted_body}")
 
     question = body["event"]["text"].strip()
     logger.info(f"{question=}")
@@ -61,8 +66,7 @@ def system_command(ack, say, body):
     channel_id = body["channel_id"]
     channel_name = body["channel_name"]
     text = body["text"]
-    logger.info(f"System command received. {channel_id=}, {
-                channel_name=}, {text=}, {body=}")
+    logger.info(f"System command received. {channel_id=}, {channel_name=}, {text=}, {body=}")
     ack()
     system_message = chat_gpt.get_system(
         conversation_id=channel_id) or "No System Prompt set"

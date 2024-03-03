@@ -73,6 +73,10 @@ In order to have the slack platform interacting with your bot, you need to confi
   * what model I use
   * what models are available
   * what model I want to use
+* Setup the Slack bot based on a JSON File that describes all the Slack bot options
+* Anable DM (Direct Messages) with the Slack bot
+* Add document search
+  * With references to the "original" document, i.e. a link to the official source of the document.
 
 ## Reading / Problems / Solutions
 

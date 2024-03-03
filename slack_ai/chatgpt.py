@@ -1,14 +1,71 @@
 import openai
 import logging
+from slack_ai.utils.utils import get_logger, write_dict_to_file, read_dict_from_file, get_now_as_string
 from dotenv import load_dotenv
 import os
+import requests
+import json
 import pprint
-from utils import write_dict_to_file, read_dict_from_file, get_now_as_string
+from slack_ai.utils.dict2object import dict2object
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+class Completions:
+    def __init__(self, **kwargs):
+        logger = get_logger("Completions.__init__", logging.INFO)
+        self._params = kwargs
+        for key, value in self._params.items():
+            logger.info(f"{key} = {value}")
 
+
+    def create(self, **kwargs):
+        class Choice:
+            def __init__(self, data):
+                logger = get_logger("Completions.create.Choice.__init__", logging.INFO)
+                logger.info(f"{data=}")
+                self.message = data.get('message', {'role': '', 'content': ''})
+                self.finish_reason = data.get('finish_reason', '')
+                self.index = data.get('index', 0)
+                logger.info(f"{self=}")
+
+        logger = get_logger("Completions.create", logging.INFO)
+        for key, value in kwargs.items():
+            logger.info(f"{key} = {value}")
+
+        url = self._params.get("base_url", "https://api.openai.com") + "/chat/completions"
+        logger.info(f"{url=}")
+        headers = {"Content-Type": "application/json"}
+        data = {
+            "messages": kwargs.get("messages"),
+            "stream": "false",
+            "use_context": True
+        }
+
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        response_data = response.json()
+        logger.info(f"{response_data=}")
+        self.choices_dict = response_data.get('choices', [])
+        choices = []
+        for choice_dict in self.choices_dict:
+            choice_obj = Choice(choice_dict)
+            choices.append(choice_obj)
+        
+        # Creating a response object
+        response_object = dict2object(response_data)
+
+        logger.info(f"{response_object}")
+        return response_object
+
+class Chat:
+    def __init__(self, **kwargs):
+        self.completions = Completions(**kwargs)
+
+class OpenAI_flexible:
+    def __init__(self, **kwargs):
+        self.chat = Chat(**kwargs)
+
+    
 class ChatGPT:
     """ A very simple wrapper around OpenAI's ChatGPT API. Makes it easy to create custom messages & chat. """
 
@@ -21,7 +78,8 @@ class ChatGPT:
         self.completion_hparams = completion_hparams or {}
         self._messages = read_dict_from_file(
             full_filename=self.MESSAGES_FILENAME)
-        self._openai_client = openai.OpenAI(**completion_hparams)
+        #self._openai_client = openai.OpenAI(**completion_hparams)
+        self._openai_client = OpenAI_flexible(**completion_hparams)
 
     def _write_messages_to_file(self):
         """ Write the messages to a file """
@@ -86,23 +144,30 @@ class ChatGPT:
 
     def _make_completion(self, messages, conversation_id=EMPTY_CONVERSATION_ID):
         """ Makes a completion with the current messages """
+        logger = get_logger("ChatGPT._make_completion", logging.INFO)
         messages = self.get_messages_for_conversation(
             conversation_id=conversation_id)
         completion = self._openai_client.chat.completions.create(
             model=self.model,
-            messages=messages
+            messages=messages,
+            use_context=True
         )
+        logger.info(f"{completion=}")
         return completion
 
     def call(self, conversation_id=EMPTY_CONVERSATION_ID):
         """ Call ChatGPT with the current messages and return the assitant's message """
+        logger = get_logger("ChatGPT.call", logging.INFO)
+        logger.info(f"Entering function...")
         completion = self._make_completion(
             self._messages, conversation_id=conversation_id)
+        logger.info(f"{completion=}")
         response = completion.choices[0].message.content
-        details = {"model": completion.model, "completion_tokens": completion.usage.completion_tokens,
-                   "prompt_tokens": completion.usage.prompt_tokens, "total_tokens": completion.usage.total_tokens}
-        model = completion.model
-        usage = completion.usage
+        details = {
+            "model": getattr(completion, 'model', None),
+            # "usage": getattr(completion, 'usage', None),
+        }
+        logger.info(f"{details=}")
         return response, details
 
     def chat(self, message, replace_last=False, conversation_id=EMPTY_CONVERSATION_ID):
