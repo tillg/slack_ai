@@ -11,6 +11,7 @@ from slack_ai.utils.dict2object import dict2object
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class Completions:
     def __init__(self, **kwargs):
         logger = get_logger("Completions.__init__", logging.INFO)
@@ -18,11 +19,11 @@ class Completions:
         for key, value in self._params.items():
             logger.info(f"{key} = {value}")
 
-
     def create(self, **kwargs):
         class Choice:
             def __init__(self, data):
-                logger = get_logger("Completions.create.Choice.__init__", logging.INFO)
+                logger = get_logger(
+                    "Completions.create.Choice.__init__", logging.INFO)
                 logger.info(f"{data=}")
                 self.message = data.get('message', {'role': '', 'content': ''})
                 self.finish_reason = data.get('finish_reason', '')
@@ -33,7 +34,8 @@ class Completions:
         for key, value in kwargs.items():
             logger.info(f"{key} = {value}")
 
-        url = self._params.get("base_url", "https://api.openai.com") + "/chat/completions"
+        url = self._params.get(
+            "base_url", "https://api.openai.com") + "/chat/completions"
         logger.info(f"{url=}")
         headers = {"Content-Type": "application/json"}
         data = {
@@ -50,22 +52,24 @@ class Completions:
         for choice_dict in self.choices_dict:
             choice_obj = Choice(choice_dict)
             choices.append(choice_obj)
-        
+
         # Creating a response object
         response_object = dict2object(response_data)
 
         logger.info(f"{response_object}")
         return response_object
 
+
 class Chat:
     def __init__(self, **kwargs):
         self.completions = Completions(**kwargs)
+
 
 class OpenAI_flexible:
     def __init__(self, **kwargs):
         self.chat = Chat(**kwargs)
 
-    
+
 class ChatGPT:
     """ A very simple wrapper around OpenAI's ChatGPT API. Makes it easy to create custom messages & chat. """
 
@@ -78,7 +82,7 @@ class ChatGPT:
         self.completion_hparams = completion_hparams or {}
         self._messages = read_dict_from_file(
             full_filename=self.MESSAGES_FILENAME)
-        #self._openai_client = openai.OpenAI(**completion_hparams)
+        # self._openai_client = openai.OpenAI(**completion_hparams)
         self._openai_client = OpenAI_flexible(**completion_hparams)
 
     def _write_messages_to_file(self):

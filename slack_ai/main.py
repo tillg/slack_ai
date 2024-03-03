@@ -27,12 +27,14 @@ chat_gpt.system(
 
 slack_app = App(token=SLACK_BOT_TOKEN)
 
+
 class PrettyJson:
     def __init__(self, data):
         self.data = data
 
     def __str__(self):
         return json.dumps(self.data, indent=4, sort_keys=True)
+
 
 @slack_app.event("message")
 def message_handler(body, say):
@@ -66,7 +68,8 @@ def system_command(ack, say, body):
     channel_id = body["channel_id"]
     channel_name = body["channel_name"]
     text = body["text"]
-    logger.info(f"System command received. {channel_id=}, {channel_name=}, {text=}, {body=}")
+    logger.info(f"System command received. {channel_id=}, {
+                channel_name=}, {text=}, {body=}")
     ack()
     system_message = chat_gpt.get_system(
         conversation_id=channel_id) or "No System Prompt set"
