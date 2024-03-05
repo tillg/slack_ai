@@ -25,12 +25,22 @@ Click on the picture to see the video.
 
 ## How to run the Bot
 
-* Get a local LLM running that offers access via an [OpenAI API](https://platform.openai.com/docs/api-reference/chat/create). I used [LM Studio on my Mac](https://lmstudio.ai).
+In order to run this system, you need a local LLM, PrivateGPT, slack_ai and the configuration in Slack. 
+
+### Local LLM
+* Get a local LLM running that offers access via an [OpenAI API](https://platform.openai.com/docs/api-reference/chat/create). Option I heard of:
+* [LM Studio on my Mac](https://lmstudio.ai) - this is what I use
+* [Ollama](https://ollama.com) - nottested yet
+
+### PrivateGPT
+
+Clone the [PrivateGPT](https://github.com/imartinez/privateGPT) repo and folow the installation in the [installation guide](https://docs.privategpt.dev/installation/getting-started/installation). 
+### 
 * Clone this repo 
 * Make sure u have python 3.12 or so
 * `pip install -r requirements.txt`
 * Create a `.env` file and edit it: `cp sample.env .env`
-* Start the thing with `python app.py` and watch the logs scroll 😉
+* Start the thing with `python -m slack_ai.main` and watch the logs scroll 😉
 
 ### Configuring the Bot on [slack](https://api.slack.com/apps)
 
@@ -69,13 +79,18 @@ In order to have the slack platform interacting with your bot, you need to confi
 
 # To Do
 
+* Properly document 
+  * the inner structure of slack_ai
+  * the different APIs used and consumed
+* An `/error` command that shows me that last error 
 * A `/model` command showing me 
   * what model I use
   * what models are available
   * what model I want to use
 * Setup the Slack bot based on a JSON File that describes all the Slack bot options
 * Anable DM (Direct Messages) with the Slack bot
-* Add document search
+* **Add document search**
+  * **Using PrivateGPT**
   * With references to the "original" document, i.e. a link to the official source of the document.
 
 ## Reading / Problems / Solutions

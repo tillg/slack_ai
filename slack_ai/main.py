@@ -1,5 +1,6 @@
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
+from slack_ai.utils.utils import get_logger, robust_jsonify
 import os
 import logging
 import json
@@ -28,18 +29,10 @@ chat_gpt.system(
 slack_app = App(token=SLACK_BOT_TOKEN)
 
 
-class PrettyJson:
-    def __init__(self, data):
-        self.data = data
-
-    def __str__(self):
-        return json.dumps(self.data, indent=4, sort_keys=True)
-
-
 @slack_app.event("message")
 def message_handler(body, say):
     logger = get_logger("message_handler", logging.INFO)
-    formatted_body = PrettyJson(body)
+    formatted_body = robust_jsonify(body)
     logger.info(f"formatted body: {formatted_body}")
 
     question = body["event"]["text"].strip()
@@ -68,8 +61,7 @@ def system_command(ack, say, body):
     channel_id = body["channel_id"]
     channel_name = body["channel_name"]
     text = body["text"]
-    logger.info(f"System command received. {channel_id=}, {
-                channel_name=}, {text=}, {body=}")
+    logger.info(f"System command received. {channel_id=}, {channel_name=}, {text=}, {body=}")
     ack()
     system_message = chat_gpt.get_system(
         conversation_id=channel_id) or "No System Prompt set"

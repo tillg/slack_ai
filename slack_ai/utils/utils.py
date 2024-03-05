@@ -32,6 +32,35 @@ class Color:
 
 internalDateFormat = "%Y-%m-%d %H:%M:%S"
 
+def robust_jsonify(obj, *args, **kwargs):
+    """
+    Convert an object to a JSON string, handling complex objects as much as possible.
+    """
+    seen = set()
+
+    def default(o):
+        """
+        Default JSON serializer.
+        """
+        try:
+            # If we've seen this object before, replace it with a placeholder
+            if id(o) in seen:
+                return '<Circular Reference>'
+            # Otherwise, add it to the set of seen objects
+            seen.add(id(o))
+            # Try to get a dictionary representation of the object
+            return o.__dict__
+        except AttributeError:
+            # If that fails, convert the object to a string
+            return str(o)
+
+    # Set default values for specific arguments if they're not set
+    kwargs.setdefault('indent', 3)
+    kwargs.setdefault('sort_keys', True)
+    kwargs.setdefault('default', default)
+
+    return json.dumps(obj, *args, **kwargs)
+
 
 def get_logger(name, log_level=logging.WARN):
     # Get a logger with the given name
@@ -46,13 +75,6 @@ def get_logger(name, log_level=logging.WARN):
         # Create a handler
         handler = logging.StreamHandler()
 
-        # Set a format that includes the logger's name
-        # formatter = logging.Formatter(
-        #     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        # formatter = logging.Formatter('%(asctime)s %(name)s[%(process)d] %(levelname)s %(funcName)s: %(message)s')
-        # formatter = logging.Formatter('\033[92m%(asctime)s\033[0m %(name)s[%(process)d] %(levelname)s %(funcName)s: %(message)s', "%Y-%m-%d %H:%M:%S")
-        # formatter = logging.Formatter(f'\033[92m%(asctime)s\033[0m \033[95m{hostname}\033[0m %(name)s[%(process)d] %(levelname)s %(funcName)s: %(message)s', "%Y-%m-%d %H:%M:%S")
-        # formatter = logging.Formatter(f'\033[92m%(asctime)s\033[0m \033[95m{hostname}\033[0m \033[94m%(name)s[%(process)d]\033[0m %(levelname)s %(funcName)s: %(message)s', "%Y-%m-%d %H:%M:%S")
         formatter = logging.Formatter(f'\033[92m%(asctime)s\033[0m \033[95m{
                                       hostname}\033[0m \033[94m%(name)s[%(process)d]\033[0m \033[1;30m%(levelname)s\033[0m %(funcName)s: %(message)s', "%Y-%m-%d %H:%M:%S")
         handler.setFormatter(formatter)
@@ -132,7 +154,7 @@ def write_dict_to_file(*, dictionary: Dict, full_filename: str) -> Dict:
     # log("writeDictToFile", "Len of dict after sorting: ", len(dictionary), " type: ", type(dictionary))
     sorted_dictionary = {"_stats": stats, **dictionary}
     # log("writeDictToFile", "Len of sorted dict to write: ", len(sortedDictionary), " type: ", type(dictionary))
-    dict_dump = json.dumps(sorted_dictionary, sort_keys=False, indent=2)
+    dict_dump = robust_jsonify(sorted_dictionary, sort_keys=False, indent=2)
 
     # Make sure that the directory in which we want to write exists.
     directory = os.path.dirname(os.path.abspath(full_filename))

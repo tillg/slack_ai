@@ -1,6 +1,6 @@
 import openai
 import logging
-from slack_ai.utils.utils import get_logger, write_dict_to_file, read_dict_from_file, get_now_as_string
+from slack_ai.utils.utils import get_logger, write_dict_to_file, read_dict_from_file, get_now_as_string, robust_jsonify
 from dotenv import load_dotenv
 import os
 import requests
@@ -16,8 +16,6 @@ class Completions:
     def __init__(self, **kwargs):
         logger = get_logger("Completions.__init__", logging.INFO)
         self._params = kwargs
-        for key, value in self._params.items():
-            logger.info(f"{key} = {value}")
 
     def create(self, **kwargs):
         class Choice:
@@ -47,11 +45,6 @@ class Completions:
         response = requests.post(url, headers=headers, data=json.dumps(data))
         response_data = response.json()
         logger.info(f"{response_data=}")
-        self.choices_dict = response_data.get('choices', [])
-        choices = []
-        for choice_dict in self.choices_dict:
-            choice_obj = Choice(choice_dict)
-            choices.append(choice_obj)
 
         # Creating a response object
         response_object = dict2object(response_data)
@@ -87,8 +80,12 @@ class ChatGPT:
 
     def _write_messages_to_file(self):
         """ Write the messages to a file """
-        write_dict_to_file(dictionary=self._messages,
-                           full_filename=self.MESSAGES_FILENAME)
+        logger = get_logger("ChatGPT._write_messages_to_file", logging.INFO)
+        try:
+            write_dict_to_file(dictionary=self._messages,
+                               full_filename=self.MESSAGES_FILENAME)
+        except Exception as e:
+            logger.error(f"Error: {e}")
 
     def _ensure_conversation_id(self, conversation_id):
         """ Ensure the conversation_id exists in the messages dict """
@@ -136,7 +133,10 @@ class ChatGPT:
         new_entry = {"role": "assistant", "content": message,
                      "datetime": get_now_as_string()}
         if details is not None:
-            new_entry.update(details)
+            try:
+                new_entry.update(details)
+            except Exception as e:
+                logger.error(f"Error: {e}")
         self._messages[conversation_id].append(
             new_entry)
         self._write_messages_to_file()
@@ -162,16 +162,16 @@ class ChatGPT:
     def call(self, conversation_id=EMPTY_CONVERSATION_ID):
         """ Call ChatGPT with the current messages and return the assitant's message """
         logger = get_logger("ChatGPT.call", logging.INFO)
-        logger.info(f"Entering function...")
         completion = self._make_completion(
             self._messages, conversation_id=conversation_id)
         logger.info(f"{completion=}")
         response = completion.choices[0].message.content
-        details = {
-            "model": getattr(completion, 'model', None),
-            # "usage": getattr(completion, 'usage', None),
-        }
-        logger.info(f"{details=}")
+
+        # Create a dictionary from the completion object's attributes
+        details = {attr: getattr(completion, attr, None) for attr in dir(
+            completion) if not attr.startswith('_')}
+        logger.info(f"{robust_jsonify(details)=}")
+
         return response, details
 
     def chat(self, message, replace_last=False, conversation_id=EMPTY_CONVERSATION_ID):
@@ -180,6 +180,7 @@ class ChatGPT:
             self._messages[conversation_id] = self._messages[conversation_id][:-2]
         self.user(message, conversation_id=conversation_id)
         response, details = self.call(conversation_id=conversation_id)
+        logger.info(f"{type(details)=}")
         self.assistant(response,  details=details,
                        conversation_id=conversation_id)
         return response
