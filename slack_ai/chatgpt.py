@@ -1,6 +1,8 @@
 import openai
 import logging
-from slack_ai.utils.utils import get_logger, write_dict_to_file, read_dict_from_file, get_now_as_string, robust_jsonify
+from slack_ai.utils.utils import get_logger,  get_now_as_string
+from slack_ai.utils.dict2file import write_dict_to_file, read_dict_from_file
+from slack_ai.utils.robust_jsonify import robust_jsonify
 from dotenv import load_dotenv
 import os
 import requests

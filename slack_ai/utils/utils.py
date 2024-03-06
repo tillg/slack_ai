@@ -1,6 +1,8 @@
+import fnmatch
 import json
 import os
 import pathlib
+import shutil
 import socket
 import re as re
 from datetime import datetime, timedelta
@@ -12,6 +14,7 @@ import logging
 import unidecode
 from PIL import Image
 from requests import Response, Session
+
 
 INTERNAL_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 coloredlogs.install()
@@ -32,34 +35,6 @@ class Color:
 
 internalDateFormat = "%Y-%m-%d %H:%M:%S"
 
-def robust_jsonify(obj, *args, **kwargs):
-    """
-    Convert an object to a JSON string, handling complex objects as much as possible.
-    """
-    seen = set()
-
-    def default(o):
-        """
-        Default JSON serializer.
-        """
-        try:
-            # If we've seen this object before, replace it with a placeholder
-            if id(o) in seen:
-                return '<Circular Reference>'
-            # Otherwise, add it to the set of seen objects
-            seen.add(id(o))
-            # Try to get a dictionary representation of the object
-            return o.__dict__
-        except AttributeError:
-            # If that fails, convert the object to a string
-            return str(o)
-
-    # Set default values for specific arguments if they're not set
-    kwargs.setdefault('indent', 3)
-    kwargs.setdefault('sort_keys', True)
-    kwargs.setdefault('default', default)
-
-    return json.dumps(obj, *args, **kwargs)
 
 
 def get_logger(name, log_level=logging.WARN):
@@ -135,92 +110,6 @@ def is_variable_set(var_name: str) -> bool:
                     f'Variable {var_name} is not set in environment.')
         return False
     return True
-
-
-def write_dict_to_file(*, dictionary: Dict, full_filename: str) -> Dict:
-    """Writes a dictionary to a file. Also updates the _stats element."""
-    logger = get_logger(write_dict_to_file.__name__, logging.INFO)
-    if not isinstance(dictionary, dict):
-        raise TypeError("Expected a dictionary, but got a " +
-                        str(type(dictionary)))
-    # log("writeDictToFile", "Len of dict to write: ", len(dictionary), " type: ", type(dictionary))
-    dictionary.setdefault("_stats", {"lastWritten": get_now_as_string()})
-    dictionary["_stats"]["lastWritten"] = get_now_as_string()
-    dictionary["_stats"]["counter"] = len(dictionary) - 1
-    stats = dictionary["_stats"]
-    del dictionary["_stats"]
-    # log("writeDictToFile", "Len of dict after deleting _stats: ", len(dictionary), " type: ", type(dictionary))
-    dictionary = dict(sorted(dictionary.items()))
-    # log("writeDictToFile", "Len of dict after sorting: ", len(dictionary), " type: ", type(dictionary))
-    sorted_dictionary = {"_stats": stats, **dictionary}
-    # log("writeDictToFile", "Len of sorted dict to write: ", len(sortedDictionary), " type: ", type(dictionary))
-    dict_dump = robust_jsonify(sorted_dictionary, sort_keys=False, indent=2)
-
-    # Make sure that the directory in which we want to write exists.
-    directory = os.path.dirname(os.path.abspath(full_filename))
-    # log('writeDictToFile', 'Writing to dir ', directory)
-    try:
-        os.makedirs(directory)
-    except FileExistsError:
-        # directory already exists, so no need to create it - all good
-        pass
-
-    with open(full_filename, 'w') as file:
-        file.write(dict_dump)
-    return sorted_dictionary
-
-
-def read_dict_from_file(*, full_filename: str, skip_file_not_found=True) -> Dict:
-    """Reads a dictionary from a file. Checks that the dictionary read has a _stats.lastWritten entry."""
-    logger = get_logger(read_dict_from_file.__name__, logging.INFO)
-    data = {}
-    try:
-        with open(full_filename, "r+") as file:
-            data = json.load(file)
-            if data is None:
-                return {}
-            if data.get("_stats", {}).get("lastWritten") is None:
-                logger.warning(
-                    f"Read file {full_filename} successfully but does not contain _stats.lastWritten.")
-            return data
-    except IOError as e:
-        if not skip_file_not_found:
-            logger.error(f"Could not open file {full_filename}")
-            raise e
-        else:
-            logger.warn(f"Could not open file {
-                        full_filename} - returning empty dict.")
-    return data
-
-
-def test_write_dict_to_file():
-    data = {
-        "hello": "world",
-        "now": "what"
-    }
-    write_dict_to_file(dictionary=data, full_filename="test.json")
-
-
-def test_read_dict_from_file():
-    data = {
-        "hello": "world",
-        "now": "what"
-    }
-    filename = "test.json"
-
-    # Write and then read it
-    write_dict_to_file(dictionary=data, full_filename=filename)
-    data2 = read_dict_from_file(full_filename=filename)
-
-    # Delete test data, try to read it - even though it doesn't exist
-    try:
-        os.remove(filename)
-    except FileNotFoundError:
-        pass
-    try:
-        data3 = read_dict_from_file(full_filename=filename)
-    except:
-        print("All good, I am in an exception as I expected it to be")
 
 
 def date_string_distance_in_days(date_str1: str, date_str2: str) -> int:

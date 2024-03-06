@@ -1,6 +1,7 @@
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
-from slack_ai.utils.utils import get_logger, robust_jsonify
+from slack_ai.utils.utils import get_logger
+from slack_ai.utils.robust_jsonify import robust_jsonify
 import os
 import logging
 import json
