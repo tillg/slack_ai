@@ -30,7 +30,7 @@ class Completions:
                 self.index = data.get('index', 0)
                 logger.info(f"{self=}")
 
-        logger = get_logger("Completions.create", logging.INFO)
+        logger = get_logger("chatgpt.Completions.create", logging.INFO)
         for key, value in kwargs.items():
             logger.info(f"{key} = {value}")
 
@@ -43,8 +43,18 @@ class Completions:
             "stream": "false",
             "use_context": True
         }
-
-        response = requests.post(url, headers=headers, data=json.dumps(data))
+        response = None
+        try:
+            response = requests.post(url, headers=headers, data=json.dumps(data))
+        except Exception as e:
+            logger.error(f"Error: {e}, response: {robust_jsonify(response)}")
+            return None
+        if response.status_code != 200:
+            logger.error(
+                f"Error: {response.status_code} {response.reason} {response.text}")
+            logger.error(f"{response=}")
+            return None
+        
         response_data = response.json()
         logger.info(f"{response_data=}")
 
@@ -153,11 +163,16 @@ class ChatGPT:
         logger = get_logger("ChatGPT._make_completion", logging.INFO)
         messages = self.get_messages_for_conversation(
             conversation_id=conversation_id)
-        completion = self._openai_client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            use_context=True
-        )
+        completion = None
+        try:
+            completion = self._openai_client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                use_context=True
+            )
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            return None
         logger.info(f"{completion=}")
         return completion
 

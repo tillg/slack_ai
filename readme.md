@@ -19,6 +19,7 @@ Click on the picture to see the video.
 * All the conversations as well as the system prompts are tracked in a human readable JSON file. Conversations are re-loaded from this file at Bot startup.
 * Use slack commends:
   * `/system` Shows & sets the system prompt for the current channel.
+* Talks to a PrivateGPT instance that holds your documents.
 
 **⚠️ Beware**
 * The system is neither multi-user capable nor meant to deal with a lot of load. The conversations are read & written to a local JSON file in an *optimistic* way.
@@ -79,6 +80,9 @@ In order to have the slack platform interacting with your bot, you need to confi
 
 # To Do
 
+* Add documents
+  * Automatically scrape websites, i.e. getA12
+  * Automatically scan & scrape discourse
 * Properly document 
   * the inner structure of slack_ai
   * the different APIs used and consumed
@@ -89,8 +93,9 @@ In order to have the slack platform interacting with your bot, you need to confi
   * what model I want to use
 * Setup the Slack bot based on a JSON File that describes all the Slack bot options
 * Anable DM (Direct Messages) with the Slack bot
-* **Add document search**
-  * **Using PrivateGPT**
+* Add document search
+  * ~~With PrivateGPT~~
+  * Show wich documents were used for creating the answer
   * With references to the "original" document, i.e. a link to the official source of the document.
 
 ## Reading / Problems / Solutions

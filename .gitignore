@@ -4,4 +4,5 @@
 __pycache__/
 messages.json
 send_req.sh
-data/tmp/
+data/tmp
+data/knowledge
