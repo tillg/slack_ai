@@ -189,6 +189,13 @@ class ChatGPT:
             completion) if not attr.startswith('_')}
         logger.info(f"{robust_jsonify(details)=}")
 
+        # Mention the sources in the response if we got some
+        if hasattr(completion.choices[0], "sources"):
+            sources_str = ""
+            for source in completion.choices[0].sources:
+                sources_str += f"{source.document.doc_metadata.file_name}\n"
+            response = f"{response}\n\nSources: {sources_str}"
+
         return response, details
 
     def chat(self, message, replace_last=False, conversation_id=EMPTY_CONVERSATION_ID):
@@ -197,7 +204,7 @@ class ChatGPT:
             self._messages[conversation_id] = self._messages[conversation_id][:-2]
         self.user(message, conversation_id=conversation_id)
         response, details = self.call(conversation_id=conversation_id)
-        logger.info(f"{type(details)=}")
+        logger.info(f"{type(details)=}")        
         self.assistant(response,  details=details,
                        conversation_id=conversation_id)
         return response
